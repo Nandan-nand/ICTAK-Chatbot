@@ -1,0 +1,610 @@
+<!-- index.html: A chatbot that uses a static data array as its knowledge base -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICTAK Bot</title>
+    <!-- Use the Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Load Tailwind CSS from CDN for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for a cleaner look */
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-container::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Chat Container -->
+    <div class="w-full max-w-2xl bg-white shadow-xl rounded-2xl flex flex-col h-[90vh]">
+
+        <!-- Header -->
+        <header class="bg-indigo-600 text-white p-4 rounded-t-2xl shadow-md flex items-center justify-between">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <h1 class="text-2xl font-bold">ICTAK Bot</h1>
+            </div>
+        </header>
+
+        <!-- Status and loading section -->
+        <div id="status-panel" class="p-4 bg-slate-100 text-center text-slate-600 transition-all duration-300">
+            <span id="status-text">Preparing bot...</span>
+            <div id="status-spinner" class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent ml-2" role="status"></div>
+        </div>
+
+        <!-- Chat History Area -->
+        <main id="chat-container" class="flex-1 overflow-y-auto p-6 space-y-4 chat-container">
+            <!-- Initial bot message will be added here dynamically -->
+        </main>
+
+        <!-- Loading Indicator for chat responses -->
+        <div id="loading-indicator" class="p-4 text-center text-slate-500 hidden">
+            <div class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+                <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-now-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+            </div>
+            Thinking...
+        </div>
+
+        <!-- Input Form -->
+        <form id="chat-form" class="p-4 border-t border-slate-200">
+            <div class="flex items-center space-x-4">
+                <input type="text" id="user-input" placeholder="Ask a question..." class="flex-1 p-3 border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                <button type="submit" id="send-button" class="bg-indigo-600 text-white p-3 rounded-full hover:bg-indigo-700 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Define a static array of course data here. You can manually add more courses to this array.
+        // The chatbot will use this data to provide specific links and details.
+        const COURSES_DATA = [
+            {
+                name: "Certified Specialist in Data Science & Analytics",
+                description: `The "Certified Specialist in Data Science & Analytics" is an Industry Readiness Program for graduates and professionals. It covers topics like Python, SQL, machine learning, deep learning, and big data. The program includes expert sessions, premium access to LinkedIn Learning, 100% placement assistance for eligible candidates, and scholarships. The curriculum is designed to make participants "industry-ready" for roles like Data Analyst and Data Scientist.`,
+                youtube_summary: `This video provides a quick overview of the Data Science & Analytics course, highlighting key learning outcomes, career opportunities, and the hands-on project-based curriculum.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP001-Program-Flyer.pdf", 
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP001-Program-Brochure.pdf",
+                    youtube: "https://youtu.be/QnSUdQxpbLE?si=xXe_Hfe5BCxhyvdE"
+                },
+                redirect_link: "https://ictkerala.org/en/op/irp001/"
+            },
+            {
+                name: "Certified Specialist in Full Stack Development (MERN)",
+                description: `This program provides expertise in the MERN stack (MongoDB, Express.js, React, Node.js) for building dynamic web applications. Students gain hands-on experience in both front-end and back-end development.`,
+                youtube_summary: `This video explains the MERN stack and its value for web developers, offering a glimpse into the course structure and the projects students will build.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP003-Program-Flyer.pdf",
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP003-Program-Brochure.pdf",
+                    youtube: "https://youtu.be/9zQhPnydr4Q"
+                },
+                redirect_link: "https://ictkerala.org/en/op/irp003/"
+            },
+            {
+                name: "Certified Specialist in Full Stack Development (Java)",
+                description: `This intensive program empowers learners to develop robust full-stack web applications using Java and popular frameworks like Spring Boot, ensuring a comprehensive understanding of modern web development practices.`,
+                youtube_summary: `This video gives an overview of the Java Full Stack program, its curriculum, and the benefits of learning Spring Boot for modern web development.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP004-Program-Flyer.pdf",
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP004-Program-Brochure.pdf",
+                    youtube: "https://youtu.be/2hJH1ELHujo"
+                },
+                redirect_link: "https://ictkerala.org/en/op/irp004/"
+            },
+            {
+                name: "Certified Specialist in Artificial Intelligence & Machine Learning",
+                description: `This program is an Industry Readiness Program designed to prepare students for the demands of the IT industry by mastering the fundamentals of AI and ML, from core concepts to advanced algorithms and practical applications.`,
+                youtube_summary: `This video provides a program overview, covering the curriculum, hands-on labs, and the career paths available after completing the AI/ML specialization.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP005-Program-Flyer.pdf",
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP005-Program-Brochure.pdf",
+                    youtube: "https://youtu.be/qrOrAwUMmVk"
+                },
+                redirect_link: "https://ictkerala.org/en/op/irp005/"
+            },
+            {
+                name: "Certified Cyber Security Analyst",
+                description: `An Industry Readiness Program that provides intensive training to protect digital systems and networks. It covers ethical hacking, network security, and incident response to equip learners with the latest skills.`,
+                youtube_summary: `This video gives an introduction to cybersecurity as a career and outlines how this course prepares students with the practical skills needed to become a certified analyst.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP006-Program-Flyer.pdf",
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP006-Program-Brochure.pdf",
+                    youtube: "https://youtu.be/9Qv7hsAs4nk"
+                },
+                redirect_link: "https://ictkerala.org/en/op/irp006/"
+            },
+            {
+                name: "Certified Specialist in SDET",
+                description: `This program is designed for aspiring Software Development Engineers in Test (SDETs). It covers automated testing, performance testing, and quality assurance principles to build robust software testing frameworks.`,
+                youtube_summary: `This video provides a detailed look at the SDET program, covering its curriculum, career prospects, and the importance of automated testing in modern software development.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP007-Program-Flyer.pdf",
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-IRP007-Program-Brochure.pdf",
+                    youtube: "https://youtu.be/2IvQEg9chSA"
+                },
+                redirect_link: "https://ictkerala.org/en/op/irp007/"
+            },
+            {
+                name: "Certified Metaverse Expert",
+                description: `This program provides comprehensive training in the technologies behind the metaverse, including virtual reality (VR), augmented reality (AR), blockchain, and 3D content creation.`,
+                youtube_summary: `This video introduces the concept of the metaverse and explains how the course provides the skills needed for a career in this emerging field.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/", // Placeholder
+                    brochure: "https://ictkerala.org/en/e-brochure/", // Placeholder
+                    youtube: "https://www.youtube.com/watch?v=0h5o4y1vL7I" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/irp008/"
+            },
+            {
+                name: "Certified Specialist in 2D/3D Game Engineering",
+                description: `This program focuses on the technical skills for developing 2D and 3D games, covering game engine fundamentals, programming, and asset integration for various platforms.`,
+                youtube_summary: `This video provides a high-level overview of the game engineering program, showcasing student projects and the career paths available in the gaming industry.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/", // Placeholder
+                    brochure: "https://ictkerala.org/en/e-brochure/", // Placeholder
+                    youtube: "https://www.youtube.com/watch?v=c2pY52p7T6o" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/irp009/"
+            },
+            {
+                name: "Certified Specialist in Full Stack Development (.NET)",
+                description: `This program focuses on building full-stack applications using the .NET framework, covering C#, ASP.NET Core, and modern front-end technologies for enterprise-level web development.`,
+                youtube_summary: `This video details the .NET Full Stack Development program, outlining the curriculum, hands-on projects, and the career benefits of mastering the .NET ecosystem.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/",
+                    brochure: "https://ictkerala.org/en/e-brochure/",
+                    youtube: "https://youtu.be/GgXDo_vDX1Y"
+                },
+                redirect_link: "https://ictkerala.org/en/op/irp010/"
+            },
+            {
+                name: "Mastering Digital Marketing with AI",
+                description: `This program equips participants with comprehensive knowledge and hands-on skills in modern online marketing, including SEO, social media, and data analytics, with a focus on AI integration.`,
+                youtube_summary: `This video explains how AI is changing digital marketing and how the course helps professionals and students master these new tools for effective online campaigns.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/",
+                    brochure: "https://ictkerala.org/en/e-brochure/",
+                    youtube: "https://youtu.be/Ew7G1jJt89U" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/usp001/"
+            },
+            {
+                name: "Robotic Process Automation with UiPath",
+                description: `This course provides hands-on training in Robotic Process Automation (RPA) using the UiPath platform, teaching students to design, develop, and deploy software robots for automating repetitive tasks.`,
+                youtube_summary: `This video introduces the concept of RPA with UiPath and explains the career opportunities and skills gained from the training program.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/",
+                    brochure: "https://ictkerala.org/en/e-brochure/",
+                    youtube: "https://youtu.be/e7v6uB2h9fA" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/usp002/"
+            },
+            {
+                name: "DevOps with Azure",
+                description: `This program provides hands-on skills in modern DevOps practices on the Azure cloud platform, covering CI/CD pipelines, containerization with Docker and Kubernetes, and infrastructure as code.`,
+                youtube_summary: `This video gives an overview of the DevOps with Azure course, highlighting the key technologies and skills taught to prepare students for a career in cloud-native development.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-USP003-Program-Flyer.pdf",
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-USP003-Program-Brochure.pdf",
+                    youtube: "https://youtu.be/j1Z2kC5n6f8" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/usp003/"
+            },
+            {
+                name: "Certified Flutter Developer",
+                description: `This program teaches you to build high-performance, cross-platform mobile apps for iOS and Android using Google's Flutter framework.`,
+                youtube_summary: `This video provides a summary of the Certified Flutter Developer course, explaining the benefits of Flutter and the projects students will create during the program.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-USP004-Program-Flyer.pdf",
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-USP004-Program-Brochure.pdf",
+                    youtube: "https://youtu.be/iK9Xn2b3o7w" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/usp004/"
+            },
+            {
+                name: "UI/UX Design in Figma",
+                description: `This program focuses on mastering UI/UX design principles and tools, with a special emphasis on Figma, to create intuitive, user-friendly digital products.`,
+                youtube_summary: `This video provides an overview of the UI/UX Design course, detailing the curriculum, design methodologies, and career opportunities for aspiring designers.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-USP005-Program-Flyer.pdf",
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-USP005-Program-Brochure.pdf",
+                    youtube: "https://m.youtube.com/shorts/hy4d_7xHHWs"
+                },
+                redirect_link: "https://ictkerala.org/en/op/usp005/"
+            },
+            {
+                name: "AWS Certified Developer",
+                description: `This program prepares you for the AWS Certified Developer – Associate certification exam, focusing on the key services and tools used by developers to build, deploy, and debug applications on the AWS platform.`,
+                youtube_summary: `This video offers in-depth training on the AWS Certified Developer Associate certification, covering the exam's key services and tools used by developers.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/", // Placeholder
+                    brochure: "https://ictkerala.org/en/e-brochure/", // Placeholder
+                    youtube: "https://www.youtube.com/watch?v=ttyh6kPdaK8"
+                },
+                redirect_link: "https://ictkerala.org/en/op/usp006/"
+            },
+            {
+                name: "Python Programming",
+                description: `This foundational course teaches the basics of Python programming, from syntax and data structures to object-oriented concepts, and is designed to boost expertise in the ICT sector.`,
+                youtube_summary: `This video gives a quick introduction to Python programming, showcasing its versatility and explaining how the course provides a strong foundation for future learning.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/", // Placeholder
+                    brochure: "https://ictkerala.org/en/e-brochure/", // Placeholder
+                    youtube: "https://www.youtube.com/watch?v=kYc5eM1R0-o" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/esp001/"
+            },
+            {
+                name: "Java Programming",
+                description: `This course provides a solid foundation in Java programming, covering core concepts like object-oriented programming, data types, and control structures, preparing students for advanced Java-based development.`,
+                youtube_summary: `This video provides an overview of the Java Programming course, explaining its foundational concepts and the importance of Java in the software industry.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/",
+                    brochure: "https://ictkerala.org/en/e-brochure/",
+                    youtube: "https://www.youtube.com/watch?v=y8Yd2p1B5-M" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/esp002/"
+            },
+            {
+                name: "Business Intelligence with Excel & Tableau",
+                description: `This course teaches you to use Excel and Tableau for business intelligence, covering data analysis, visualization, and dashboard creation to help make data-driven decisions.`,
+                youtube_summary: `This video introduces the Business Intelligence with Excel & Tableau course, highlighting how it prepares students to create impactful data visualizations and reports.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/", // Placeholder
+                    brochure: "https://ictkerala.org/en/e-brochure/", // Placeholder
+                    youtube: "https://www.youtube.com/watch?v=i1xP9G12j9c" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/esp003/"
+            },
+            {
+                name: "Business Intelligence with Power BI",
+                description: `This program focuses on using Microsoft Power BI for business intelligence, covering data modeling, visualization, and report generation to transform raw data into valuable business insights.`,
+                youtube_summary: `This video provides an overview of the Business Intelligence with Power BI program, explaining its core components and the skills gained to build interactive dashboards.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/",
+                    brochure: "https://ictkerala.org/en/e-brochure/",
+                    youtube: "https://www.youtube.com/watch?v=3g8K91hS3J4" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/esp004/"
+            },
+            {
+                name: "Front-end Application Development with Angular",
+                description: `This course is designed to teach modern front-end development using the Angular framework, enabling students to build dynamic and responsive single-page applications.`,
+                youtube_summary: `This video provides an introduction to Angular and the course curriculum, highlighting how to build scalable and maintainable front-end applications.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/", // Placeholder
+                    brochure: "https://ictkerala.org/en/e-brochure/", // Placeholder
+                    youtube: "https://www.youtube.com/watch?v=cK2V3_yRz_0" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/esp005/"
+            },
+            {
+                name: "Data Analytics with Excel",
+                description: `This course focuses on mastering data analysis using Microsoft Excel, covering advanced formulas, pivot tables, and data visualization techniques to help you analyze and interpret large datasets.`,
+                youtube_summary: `This video gives a quick summary of the Data Analytics with Excel course, explaining how to leverage Excel for powerful data analysis and reporting.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/", // Placeholder
+                    brochure: "https://ictkerala.org/en/e-brochure/", // Placeholder
+                    youtube: "https://www.youtube.com/watch?v=37-c8T9L_jE" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/esp006/"
+            },
+            {
+                name: "C# Programming",
+                description: `This course introduces C# programming, a powerful language for building Windows applications, web services, and games. It covers fundamental concepts, object-oriented principles, and the .NET framework.`,
+                youtube_summary: `This video provides a summary of the C# programming course, highlighting its key features and applications in software development.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/", // Placeholder
+                    brochure: "https://ictkerala.org/en/e-brochure/", // Placeholder
+                    youtube: "https://www.youtube.com/watch?v=gT0a9D1Rz7E" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/esp007/"
+            },
+            {
+                name: "Mastering Google Productivity with AI",
+                description: `This nanoskill program is designed to enhance productivity using Google tools with integrated AI features, covering advanced tips for Google Workspace.`,
+                youtube_summary: `This video provides a brief overview of the Mastering Google Productivity with AI program, showcasing how to leverage AI tools to boost efficiency in a Google Workspace environment.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/", // Placeholder
+                    brochure: "https://ictkerala.org/en/e-brochure/", // Placeholder
+                    youtube: "https://www.youtube.com/watch?v=Cq2d8rA_h1o" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/nsp001/"
+            },
+            {
+                name: "Prompt Engineering",
+                description: `This nanoskill program focuses on the art and science of "prompt engineering," teaching you how to craft effective prompts to get the best results from large language models and other AI tools.`,
+                youtube_summary: `This video introduces the concept of prompt engineering and explains its importance for working with modern AI, giving tips on how to create better prompts.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/", // Placeholder
+                    brochure: "https://ictkerala.org/en/e-brochure/", // Placeholder
+                    youtube: "https://www.youtube.com/watch?v=o2dD3w0a96A" // Placeholder
+                },
+                redirect_link: "https://ictkerala.org/en/op/nsp002/"
+            },
+            {
+                name: "Industry-ready Accountants Program",
+                description: `The Industry-ready Accountants Program is a partner program designed to provide students with the practical skills needed for a career in accounting, combining theoretical knowledge with hands-on training on real projects.`,
+                youtube_summary: `This video discusses the importance of a professional and practical approach to accounting and how this program prepares students to meet industry standards.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/",
+                    brochure: "https://ictkerala.org/en/e-brochure/",
+                    youtube: "https://www.youtube.com/watch?v=Evj6pSK21sw"
+                },
+                redirect_link: "https://ictkerala.org/en/op/annppr01/"
+            },
+            {
+                name: "Certificate Program in FPGA Design using HDL",
+                description: `This partner program provides an in-depth course on FPGA Design using VHDL, covering the essentials of digital design, VHDL programming, and FPGA implementation. The course is ideal for beginners and includes practical, hands-on examples.`,
+                youtube_summary: `This video provides an in-depth course overview on FPGA Design with VHDL, showcasing what you will learn and the practical projects you will build.`,
+                links: {
+                    flyer: "https://ictkerala.org/en/program-flyer/",
+                    brochure: "https://ictkerala.org/en/e-brochure/",
+                    youtube: "https://www.youtube.com/watch?v=lKPjGGa3Tpo"
+                },
+                redirect_link: "https://ictkerala.org/en/op/cdappr01/"
+            },
+            {
+                name: "Certified Specialist in Health Information Technology",
+                description: `This specialized program is designed to bridge the gap between technology and healthcare, focusing on hospital management foundations, medical informatics, and hospital information systems.`,
+                youtube_summary: `This video discusses the role of a Health Informatics Specialist and the skills required for a career in healthcare IT, giving an introduction to the program's focus.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-MCCPPR01-Program-Flyer.pdf",
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-MCCPPR01-Program-Brochure.pdf",
+                    youtube: "https://www.youtube.com/watch?v=4FmHIXCQj_s"
+                },
+                redirect_link: "https://ictkerala.org/en/op/mccppr01/"
+            },
+            {
+                name: "BIMLABS Certified BIM Modeller Program",
+                description: `The BIMLABS Certified BIM Modeller Program is a partner program focused on Building Information Modeling (BIM), providing government and industry-backed training on industry-standard tools and real-time projects.`,
+                youtube_summary: `This video explains why BIMLABS is a leading BIM training institute, highlighting its government and industry-backed training, Autodesk partnership, and placement assistance.`,
+                links: {
+                    flyer: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-BIMPPR01-Program-Flyer.pdf",
+                    brochure: "https://ictkerala.org/uploads/2025/04/2025-04_ROU-BIMPPR01-Program-Brochure.pdf",
+                    youtube: "https://www.youtube.com/shorts/beLh5F12drQ"
+                },
+                redirect_link: "https://ictkerala.org/en/op/bimppr01/"
+            }
+        ];
+
+        // ICTAK website content to be used as a primary knowledge base.
+        const WEBSITE_CONTENT = `
+        Information and Communication Technology Academy of Kerala (ICTAK) is an organisation established by Government of Kerala to enhance the quality of graduates in the information technology sector and to generate resources for increasing the employability of students. It is a social enterprise established through a Public-Private Partnership (PPP) model. The mission is to impart ICT skills to the youth of Kerala, enhancing their employability in the industry.
+        
+        Head Quarters: G1, Ground Floor, Thejaswini, Technopark Campus, Thiruvananthapuram, Kerala, India – 695 581.
+        Regional Centre (Central): B-Wing, Kanikonna Villa, Infopark Campus, Koratty, Thrissur, Kerala, India – 680 308.
+        Regional Centre (North): 2nd Floor, UL Cyberpark Building, Nellikode Post, Kozhikode.
+        Phone: +91 471 270 0811.
+        
+        The ICT Academy of Kerala offers hands-on training sessions aimed at bridging the skill gap in the information and communication technology (ICT) domain. These programs include:
+        - **Industry Readiness Programs:** Designed to equip you with the latest skills and knowledge in the ICT sector.
+        - **Upskilling Programs:** Tailored to meet the demands of the ICT sector, ensuring you stay competitive.
+        - **Essential Skill Programs:** To boost your expertise in the ICT sector.
+        - **Nanoskill Programs:** Providing focused, online training for targeted skills.
+        - **Partner Programs:** In collaboration with industry leaders to provide cutting-edge training.
+        - **ASPIRE-Unnathi Programs.**
+        
+        Current Offerings include: Certified Specialist in Data Science & Analytics, BIMLABS Certified BIM Modeller Program, Java Programming, Certified Flutter Developer, DevOps with Azure, Mastering Digital Marketing with AI, Certified Specialist in Health Information Technology, Business Intelligence with Power BI, Python Programming, Certified Specialist in SDET, Certified Cyber Security Analyst, and Certified Specialist in Full Stack Development (MERN).
+        
+        Scholarship Terms:
+        - The scholarship is subject to terms and conditions.
+        - A scholarship of 40% is available for candidates who score above 60% on the admission test.
+        - A Special Offer of 15% cashback is available after successful program completion.
+        - An 'Early Bird Concession' of 5,000 INR can be availed during the second installment.
+        - The registration fee (INR 250 + 18% GST) is non-refundable.
+        - Refund requests must be made five days before the commencement of the class/batch.
+        - A minimum of 80% attendance is required for scholarship recipients.
+        
+        General Information:
+        - ICTAK has trained over 18,000 participants and 5,000 faculty.
+        - It has partnered with over 2,000 institutions.
+        - It provides 100% placement assistance for eligible candidates.
+        - The aptitude test for programs covers Numerical Ability, Logical Reasoning, Verbal Ability, and Data Manipulation.
+        - ICTAK offers training in physical, online, and hybrid modes.
+        `;
+
+        // Get references to DOM elements
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const chatContainer = document.getElementById('chat-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const statusPanel = document.getElementById('status-panel');
+        const statusText = document.getElementById('status-text');
+        const statusSpinner = document.getElementById('status-spinner');
+        const sendButton = document.getElementById('send-button');
+
+        let knowledgeBase = '';
+
+        // Function to create and append a new message to the chat
+        function addMessage(text, isUser) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('flex', 'items-start');
+            messageElement.style.opacity = 0;
+            messageElement.style.transition = 'opacity 0.5s ease-in-out';
+
+            const textContainer = document.createElement('div');
+            textContainer.classList.add('p-4', 'rounded-xl', 'shadow-sm', 'max-w-[85%]');
+            
+            if (isUser) {
+                messageElement.classList.add('justify-end');
+                textContainer.classList.add('bg-indigo-500', 'text-white', 'rounded-br-none');
+            } else {
+                messageElement.classList.add('justify-start');
+                textContainer.classList.add('bg-slate-200', 'text-slate-800', 'rounded-bl-none');
+            }
+
+            textContainer.innerHTML = text;
+            messageElement.appendChild(textContainer);
+            chatContainer.appendChild(messageElement);
+
+            setTimeout(() => {
+                messageElement.style.opacity = 1;
+            }, 10);
+            
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Initialize the bot's knowledge base on page load
+        async function initializeBot() {
+            addMessage("Hello! I am your institutional chatbot. I am now learning about our programs.", false);
+            userInput.disabled = true;
+            sendButton.disabled = true;
+
+            // Combine the static data and website content for the LLM prompt
+            const staticDataString = COURSES_DATA.map(course => {
+                const linksList = Object.entries(course.links)
+                    .map(([key, value]) => `  - **${key.charAt(0).toUpperCase() + key.slice(1)}**: <a href="${value}" target="_blank" class="text-indigo-400 underline hover:text-indigo-300">${value}</a>`)
+                    .join('\n');
+
+                return `
+**Course:** ${course.name}
+**Description:** ${course.description}
+**YouTube Summary:** ${course.youtube_summary}
+**Links:**
+${linksList}
+                `;
+            }).join('\n');
+
+            knowledgeBase = `
+            ICTAK INSTITUTIONAL KNOWLEDGE
+            
+            Website Content:
+            ${WEBSITE_CONTENT}
+            
+            Static Course Data:
+            ${staticDataString}
+            `;
+
+            statusText.textContent = "Ready to chat!";
+            statusSpinner.classList.add('hidden');
+            userInput.disabled = false;
+            sendButton.disabled = false;
+
+            // Display initial welcome message to the user
+            setTimeout(() => {
+                addMessage("Hello! I'm the official ICTAK chatbot. How can I help you today?", false);
+            }, 1500);
+        }
+
+        // Handle form submission
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const prompt = userInput.value.trim();
+            if (prompt === '') {
+                return;
+            }
+
+            // Display user message
+            addMessage(prompt, true);
+            userInput.value = '';
+
+            // Check if the user is asking about a specific course
+            let courseDetails = null;
+            for (const course of COURSES_DATA) {
+                if (prompt.toLowerCase().includes(course.name.toLowerCase())) {
+                    courseDetails = course;
+                    break;
+                }
+            }
+
+            if (courseDetails) {
+                // If course details are found, provide a detailed response with links
+                const linksList = Object.entries(courseDetails.links)
+                    .map(([key, value]) => `  - <strong>${key.charAt(0).toUpperCase() + key.slice(1)}</strong>: <a href="${value}" target="_blank" class="text-indigo-400 underline hover:text-indigo-300">${value}</a>`)
+                    .join('<br>');
+
+                const courseResponse = `
+                    **${courseDetails.name}**: ${courseDetails.description}<br><br>
+                    <strong>Find out more about this course here:</strong><br>${linksList}
+                `;
+                addMessage(courseResponse, false);
+                return; // Stop further execution
+            }
+
+            // Show loading indicator
+            loadingIndicator.classList.remove('hidden');
+
+            try {
+                const fullPrompt = `You are a helpful chatbot for a training institution named ICTAK. Your goal is to provide a concise and professional answer to general questions about the institution. If the question is about a specific course, direct the user to the provided links.
+
+                Context:
+                ${knowledgeBase}
+
+                User's Question:
+                ${prompt}`;
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: fullPrompt }] });
+                const payload = { contents: chatHistory };
+                
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                let response;
+                let retryCount = 0;
+                const maxRetries = 5;
+                const baseDelay = 1000;
+
+                while (retryCount < maxRetries) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.status === 429) {
+                            const delay = baseDelay * Math.pow(2, retryCount);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            retryCount++;
+                            continue;
+                        } else if (!response.ok) {
+                            throw new Error(`API call failed with status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        const botResponse = result.candidates[0].content.parts[0].text;
+                        addMessage(botResponse, false);
+                        break;
+
+                    } catch (error) {
+                        console.error('Fetch error:', error);
+                        if (retryCount >= maxRetries - 1) {
+                            addMessage("Sorry, I'm having trouble connecting right now. Please try again later.", false);
+                        }
+                        retryCount++;
+                    }
+                }
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+
+        // Start the application
+        window.onload = initializeBot;
+    </script>
+</body>
+</html>
